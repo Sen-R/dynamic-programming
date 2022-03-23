@@ -1,0 +1,28 @@
+[tool.black]
+line-length = 79
+
+[tool.flake8]
+# config in .flake8 as flake8 doesn't yet support pyproject.toml
+
+[tool.poetry]
+name = "dp"
+version = "0.1.0"
+description = "Dynamic programming"
+authors = ["Senthooran Rajamanoharan <s.rajamanoharan@gmail.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = ">=3.8,<3.11"
+numpy = "^1.21"
+scipy = "^1.8.0"
+tqdm = "^4.63.0"
+
+[tool.poetry.dev-dependencies]
+black = "^22.1.0"
+flake8 = "^4.0.1"
+mypy = "^0.931"
+pytest = "^7.0.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
