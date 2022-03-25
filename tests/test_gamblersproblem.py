@@ -2,9 +2,9 @@ from typing import Iterable, Dict, List
 import pytest
 from numpy.testing import assert_almost_equal
 from dp._types import NextStateProbabilityTable
-from dp import FiniteMDP
+from dp import FiniteMDP, StateValueFunction
 from dp.gamblersproblem import GamblersProblem
-from dp.solve import value_iteration, optimal_actions_from_state_values
+from dp.solve import value_iteration
 
 
 @pytest.fixture
@@ -63,18 +63,18 @@ class TestGamblersProblem:
 
 
 @pytest.fixture
-def optimal_v(gp: FiniteMDP) -> Dict[int, float]:
+def optimal_v(gp: FiniteMDP) -> StateValueFunction[int, int]:
     """Returns optimal state values for problem, using value iteration."""
-    v = {s: 0.0 for s in gp.states}
-    value_iteration(v, gp, 1.0, tol=1e-8)
+    v = StateValueFunction(gp)
+    value_iteration(v, 1.0, tol=1e-8)
     return v
 
 
 @pytest.fixture
 def optimal_actions_map(
-    gp: FiniteMDP, optimal_v: Dict[int, float]
+    optimal_v: StateValueFunction[int, int]
 ) -> Dict[int, List[int]]:
-    return optimal_actions_from_state_values(gp, optimal_v, 1.0)
+    return optimal_v.optimal_actions_map(gamma=1.0)
 
 
 # Some known optimal policies for Gambler's problem

@@ -4,12 +4,11 @@ import pytest
 from numpy.testing import assert_almost_equal
 import numpy as np
 from dp.gridworld import GridWorld, GWState, GWAction
+from dp import StateValueFunction
 from dp.solve import (
     backup_optimal_values,
-    backup_policy_values_operator,
-    backup_single_state_optimal_actions,
-    backup_single_state_value,
-    exact_state_values,
+    policy_evaluation_affine_operator,
+    policy_evaluation,
     exact_optimum_state_values,
     iterative_policy_evaluation,
     policy_iteration,
@@ -28,10 +27,10 @@ class TestExactStateValues:
     ) -> None:
         """Compares outputs of `exact_state_values` against results given
         in the textbook where the specified gridworld is introduced."""
-        v = exact_state_values(gridworld, gamma=0.9, pi=pi)
-        assert round(v[GWState((3, 1))], 1) == -0.4
-        assert round(v[GWState((4, 3))], 1) == -1.4
-        assert round(v[GWState((0, 1))], 1) == 8.8
+        v = policy_evaluation(gridworld, pi=pi, gamma=0.9)
+        assert round(v(GWState((3, 1))), 1) == -0.4
+        assert round(v(GWState((4, 3))), 1) == -1.4
+        assert round(v(GWState((0, 1))), 1) == 8.8
 
 
 class TestExactOptimumStateValues:
@@ -41,33 +40,31 @@ class TestExactOptimumStateValues:
         """Compares outputs of `exact_optimum_state_values` against results
         given in the textbook where this gridworld is introduced."""
         v_star = exact_optimum_state_values(gridworld, gamma=0.9)
-        assert round(v_star[GWState((3, 1))], 1) == 17.8
-        assert round(v_star[GWState((4, 3))], 1) == 13.0
-        assert round(v_star[GWState((0, 1))], 1) == 24.4
+        assert round(v_star(GWState((3, 1))), 1) == 17.8
+        assert round(v_star(GWState((4, 3))), 1) == 13.0
+        assert round(v_star(GWState((0, 1))), 1) == 24.4
 
 
 class TestIterativePolicyEvaluation:
     def test_iterative_policy_evaluation(self, gridworld: GridWorld) -> None:
-        v = {s: 0.0 for s in gridworld.states}
+        v = StateValueFunction(gridworld)
         niter = iterative_policy_evaluation(
             v,
-            gridworld,
-            gamma=0.9,
             pi=pi,
+            gamma=0.9,
             tol=1e-4,
         )
         assert niter > 0 and niter < 50  # should take less than 50 sweeps
-        assert round(v[GWState((3, 1))], 1) == -0.4
-        assert round(v[GWState((4, 3))], 1) == -1.4
-        assert round(v[GWState((0, 1))], 1) == 8.8
+        assert round(v(GWState((3, 1))), 1) == -0.4
+        assert round(v(GWState((4, 3))), 1) == -1.4
+        assert round(v(GWState((0, 1))), 1) == 8.8
 
     def test_maxiter_terminates_iteration(self, gridworld: GridWorld) -> None:
         with pytest.warns(UserWarning):
             niter = iterative_policy_evaluation(
-                {s: 0.0 for s in gridworld.states},
-                gridworld,
-                gamma=0.9,
+                StateValueFunction(gridworld),
                 pi=pi,
+                gamma=0.9,
                 tol=1e-10,
                 maxiter=10,
             )
@@ -80,10 +77,9 @@ class TestIterativePolicyEvaluation:
         with warnings.catch_warnings():
             warnings.simplefilter("error")
             niter = iterative_policy_evaluation(
-                {s: 0.0 for s in gridworld.states},
-                gridworld,
-                gamma=0.9,
+                StateValueFunction(gridworld),
                 pi=pi,
+                gamma=0.9,
                 tol=None,
                 maxiter=5,
             )
@@ -95,11 +91,11 @@ class TestPolicyIteration:
         self, gridworld: GridWorld
     ) -> None:
         # Set up initial state value estimates and deterministic policy
-        v = {s: 0.0 for s in gridworld.states}
+        v = StateValueFunction(gridworld)
         pi = {s: GWAction("n") for s in gridworld.states}
 
         # Perform policy iteration to refine both v and pi
-        niter = policy_iteration(v, pi, gridworld, gamma=0.9, tol=1e-4)
+        niter = policy_iteration(v, pi, gamma=0.9, tol=1e-4)
 
         # Check whether policy matches optimal policy given in Sutton-Baro
         # for this gridworld
@@ -111,9 +107,8 @@ class TestPolicyIteration:
     def test_maxiter_terminates_iteration(self, gridworld: GridWorld) -> None:
         with pytest.warns(UserWarning):
             niter = policy_iteration(
-                {s: 0.0 for s in gridworld.states},
+                StateValueFunction(gridworld),
                 {s: GWAction("n") for s in gridworld.states},
-                gridworld,
                 gamma=0.9,
                 tol=1e-4,
                 maxiter=2,
@@ -124,27 +119,30 @@ class TestPolicyIteration:
 class TestValueIteration:
     def test_value_iteration(self, gridworld: GridWorld) -> None:
         # Set up initial state values function and iterate
-        v_star = {s: 0.0 for s in gridworld.states}
-        niter = value_iteration(v_star, gridworld, gamma=0.9, tol=1e-4)
+        v_star = StateValueFunction(gridworld)
+        niter = value_iteration(v_star, gamma=0.9, tol=1e-4)
 
         # Check whether state values match optimal values given in
         # Sutton-Barto for this gridworld
         assert niter > 0 and niter < 30  # typically converges in less than 30
-        assert round(v_star[GWState((3, 1))], 1) == 17.8
-        assert round(v_star[GWState((4, 3))], 1) == 13.0
-        assert round(v_star[GWState((0, 1))], 1) == 24.4
+        assert round(v_star(GWState((3, 1))), 1) == 17.8
+        assert round(v_star(GWState((4, 3))), 1) == 13.0
+        assert round(v_star(GWState((0, 1))), 1) == 24.4
 
     def test_maxiter_terminates_iteration(self, gridworld: GridWorld) -> None:
-        v_star = {s: 0.0 for s in gridworld.states}
+        v_star = StateValueFunction(gridworld)
         with pytest.warns(UserWarning):
-            niter = value_iteration(v_star, gridworld, 0.9, 1e-14, maxiter=2)
+            niter = value_iteration(v_star, 0.9, 1e-14, maxiter=2)
         assert niter == 2
 
 
 class TestSolverBasicComponents:
     def test_backup_single_state_value(self, gridworld: GridWorld) -> None:
         # Initialise state value mapping arbitrarily as follows
-        v = {s: gridworld.s2i(s) for s in gridworld.states}
+        v = StateValueFunction(
+            gridworld,
+            initial_value=[gridworld.s2i(s) for s in gridworld.states],
+        )
 
         # Perform a backup update on a single state with arbitrary random
         # policy and check it meets expectations
@@ -154,8 +152,8 @@ class TestSolverBasicComponents:
             (GWAction("w"), 0.05),
             (GWAction("s"), 0.05),
         )
-        updated_v = backup_single_state_value(
-            gridworld, GWState((4, 0)), v, gamma=0.9, pi=lambda s: fixed_pi
+        updated_v = v.backup_state_value(
+            GWState((4, 0)), gamma=0.9, pi=lambda s: fixed_pi
         )
         assert gridworld.s2i(GWState((4, 0))) == 20  # sanity check
         expected_v = (
@@ -166,29 +164,30 @@ class TestSolverBasicComponents:
         )
         assert_almost_equal(updated_v, expected_v)
 
-    def test_backup_single_state_optimal_action(
-        self, gridworld: GridWorld
-    ) -> None:
+    def test_backup_optimal_actions(self, gridworld: GridWorld) -> None:
         # Initialise state value mapping arbitrarily as follows
-        v = {s: gridworld.s2i(s) for s in gridworld.states}
+        v = StateValueFunction(
+            gridworld,
+            [gridworld.s2i(s) for s in gridworld.states],
+        )
 
         # Call method to identify optimal action and action value estimated
         # for an arbitrarily chosen state and make sure it conforms to
         # expectations
         state = GWState((4, 0))
         assert gridworld.s2i(state) == 20  # sanity check
-        actions, action_value = backup_single_state_optimal_actions(
-            gridworld, state, v, gamma=0.9
-        )
+        actions, action_value = v.backup_optimal_actions(state, gamma=0.9)
         assert len(actions) == 1
         assert actions[0] == GWAction("e")  # RHS worked out by hand
         assert action_value == 0.9 * 21  # corresponding action value
 
-    def test_backup_policy_values_operator(self, gridworld: GridWorld) -> None:
-        A, b = backup_policy_values_operator(
+    def test_policy_evaluation_affine_operator(
+        self, gridworld: GridWorld
+    ) -> None:
+        A, b = policy_evaluation_affine_operator(
             gridworld,
-            0.9,
             lambda s: [(a, 0.25) for a in gridworld.actions(s)],
+            0.9,
         )
         assert b[gridworld.s2i(GWState((1, 2)))] == 0
         assert b[gridworld.s2i(GWState((2, 4)))] == -0.25

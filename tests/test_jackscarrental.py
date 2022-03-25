@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 from numpy.testing import assert_almost_equal
 from scipy.stats import poisson  # type: ignore
+from dp import StateValueFunction
 from dp.jackscarrental import (
     JacksCarRental,
     CarCounts,
@@ -232,9 +233,9 @@ class TestJacksCarRentalFunctional:
         assert len(policy_matrix) == 21
 
         # Computer optimal policy by policy iteration
-        v = {s: 0.0 for s in jcr.states}
+        v = StateValueFunction(jcr)
         pi = {s: jcr.actions(s)[0] for s in jcr.states}
-        policy_iteration(v, pi, jcr, 0.9, 0.1)
+        policy_iteration(v, pi, 0.9, 0.1)
 
         # Compare the solution with the desired answer
         for s, a in pi.items():
