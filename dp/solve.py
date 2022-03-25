@@ -231,7 +231,7 @@ def iterative_policy_evaluation(
     mdp: FiniteMDP[State, Action],
     gamma: float,
     pi: Policy[State, Action],
-    tol: Optional[float],
+    tol: Optional[float] = None,
     maxiter: int = 100,
 ) -> int:
     """Applies iterative policy evaluation to refine provided state value
