@@ -31,7 +31,7 @@ class GridWorld(FiniteMDP[GWState, GWAction]):
         self.size = size
         self.wormholes = wormholes if wormholes is not None else {}
         self.terminal_states = (
-            set(terminal_states) if terminal_states is not None else {}
+            set(terminal_states) if terminal_states is not None else set()
         )
         self._states = [
             GWState((i, j)) for i, j in product(range(size), range(size))
