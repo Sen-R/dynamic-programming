@@ -92,9 +92,13 @@ class JacksCarRental(FiniteMDP[CarCounts, MoveCars]):
         next_evening_counts, exp_rentals = self.evening_counts_and_exp_rentals(
             next_morning_counts
         )
+        return next_evening_counts, self.exp_reward(action, exp_rentals)
+
+    def exp_reward(self, action: MoveCars, exp_rentals: float) -> float:
+        """Calculates the expected reward under the given scenario."""
         action_reward = abs(action) * self.reward_per_car_for_moving_cars
         exp_reward = exp_rentals * self.reward_for_rental + action_reward
-        return next_evening_counts, exp_reward
+        return exp_reward
 
     def evening_counts_and_exp_rentals(
         self, morning_counts: CarCounts

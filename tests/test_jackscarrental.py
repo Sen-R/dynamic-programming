@@ -101,6 +101,13 @@ class TestJacksCarRental:
         actual_actions = set(jcr_mini_on_limit.actions(state))
         assert expected_actions == actual_actions
 
+    def test_exp_reward(self, jcr: JacksCarRental) -> None:
+        action = MoveCars(3)
+        exp_rentals = 5
+        assert_almost_equal(
+            jcr.exp_reward(action, exp_rentals), 5 * 10.0 - 3 * 2.0
+        )
+
     def test_next_states_and_rewards(self, jcr_mini: JacksCarRental) -> None:
         state = CarCounts((1, 2))  # arbitrary state
         action = MoveCars(-1)  # arbitrary action
