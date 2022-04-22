@@ -92,10 +92,26 @@ class JacksCarRental(FiniteMDP[CarCounts, MoveCars]):
         next_evening_counts, exp_rentals = self.evening_counts_and_exp_rentals(
             next_morning_counts
         )
-        return next_evening_counts, self.exp_reward(action, exp_rentals)
+        exp_reward = self.exp_reward(action, exp_rentals, next_morning_counts)
+        return next_evening_counts, exp_reward
 
-    def exp_reward(self, action: MoveCars, exp_rentals: float) -> float:
-        """Calculates the expected reward under the given scenario."""
+    def exp_reward(
+        self,
+        action: MoveCars,
+        exp_rentals: float,
+        next_morning_counts: CarCounts,
+    ) -> float:
+        """Calculates the expected reward under the given scenario.
+
+        The expected reward for the default problem is a function of how
+        many cars were moved (`action`) and the average number of rentals
+        over the next day (`exp_rental`). However, this function also takes
+        as a parameter the number of cars at each location at the start
+        of the next day (`morning_counts`), so that the class can be
+        extended to allow for more complex reward functions (such as the
+        modified problem described in Exercise 4.7 of the textbook, where
+        the reward is also a function of the number of cars kept overnight).
+        """
         action_reward = abs(action) * self.reward_per_car_for_moving_cars
         exp_reward = exp_rentals * self.reward_for_rental + action_reward
         return exp_reward

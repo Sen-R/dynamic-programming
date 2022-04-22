@@ -104,8 +104,10 @@ class TestJacksCarRental:
     def test_exp_reward(self, jcr: JacksCarRental) -> None:
         action = MoveCars(3)
         exp_rentals = 5
+        morning_counts = CarCounts((15, 16))  # values should have no effect
         assert_almost_equal(
-            jcr.exp_reward(action, exp_rentals), 5 * 10.0 - 3 * 2.0
+            jcr.exp_reward(action, exp_rentals, morning_counts),
+            5 * 10.0 - 3 * 2.0,
         )
 
     def test_next_states_and_rewards(self, jcr_mini: JacksCarRental) -> None:
